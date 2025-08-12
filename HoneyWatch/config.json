@@ -1,0 +1,12 @@
+{
+  "ports": [
+    22,
+    23,
+    80
+  ],
+  "banners": {
+    "22": "SSH-2.0-OpenSSH_7.4\r\n",
+    "23": "Welcome to BusyBox v1.31.1 (built-in shell)\r\nlogin: ",
+    "80": "HTTP/1.1 200 OK\r\nServer: Apache/2.4.29\r\nContent-Length: 0\r\n\r\n"
+  }
+}

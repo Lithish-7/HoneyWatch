@@ -1,0 +1,81 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>HoneyWatch Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body { font-family: system-ui, Segoe UI, Roboto, sans-serif; background:#0b0f14; color:#e6ffe6; margin:0; }
+    header { padding:16px 24px; background:#0f141a; border-bottom:1px solid #112; }
+    h1 { margin:0; font-size:22px; color:#7CFF7A; }
+    main { padding: 20px; display:grid; gap:16px; grid-template-columns: 1fr 1fr; }
+    .card { background:#0f141a; border:1px solid #112; border-radius:12px; padding:16px; }
+    table { width:100%; border-collapse: collapse; }
+    th, td { border-bottom:1px solid #123; padding:8px; text-align:left; font-size:14px; }
+    .muted { color:#9cc; font-size:13px; }
+    @media(max-width:900px){ main{ grid-template-columns:1fr; } }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>🛡️ HoneyWatch — Real‑Time Honeypot Dashboard</h1>
+    <div class="muted">Click anywhere to upload <code>logs/alerts.jsonl</code> (processed locally).</div>
+  </header>
+  <main>
+    <div class="card">
+      <h3>Events by Type</h3>
+      <table id="byType"></table>
+    </div>
+    <div class="card">
+      <h3>Top Source IPs</h3>
+      <table id="byIp"></table>
+    </div>
+    <div class="card">
+      <h3>Ports Targeted</h3>
+      <table id="byPort"></table>
+    </div>
+    <div class="card">
+      <h3>Recent Events</h3>
+      <table id="recent"></table>
+    </div>
+  </main>
+
+  <input id="file" type="file" accept=".jsonl" style="display:none" />
+  <script>
+    document.body.addEventListener('click', ()=>document.getElementById('file').click());
+    document.getElementById('file').addEventListener('change', async (e)=>{
+      const file = e.target.files[0];
+      if(!file) return;
+      const text = await file.text();
+      const lines = text.split(/\\r?\\n/).filter(Boolean);
+      const events = lines.map(l=>{ try{ return JSON.parse(l) } catch(e){ return null } }).filter(Boolean);
+      render(events);
+    });
+
+    function tally(arr, key){
+      const map = new Map();
+      for(const e of arr){
+        const k = key(e);
+        map.set(k, (map.get(k)||0)+1);
+      }
+      return [...map.entries()].sort((a,b)=>b[1]-a[1]);
+    }
+
+    function render(events){
+      const byType = tally(events, e=>e.kind);
+      fillTable('byType', [['Type','Count'], ...byType]);
+      const byIp = tally(events, e=>(e.meta && e.meta.ip) || 'unknown');
+      fillTable('byIp', [['IP','Count'], ...byIp.slice(0,10)]);
+      const byPort = tally(events, e=>(e.meta && e.meta.port) || 'unknown');
+      fillTable('byPort', [['Port','Count'], ...byPort]);
+      const recent = events.slice(-12).reverse().map(e=>[e.ts, e.kind, e.message]);
+      fillTable('recent', [['Time','Type','Message'], ...recent]);
+    }
+
+    function fillTable(id, rows){
+      const el = document.getElementById(id);
+      el.innerHTML = rows.map((r,i)=>`<tr>${r.map((c)=>`<${i? 'td':'th'}>${c}</${i? 'td':'th'}>`).join('')}</tr>`).join('');
+    }
+  </script>
+</body>
+</html>
