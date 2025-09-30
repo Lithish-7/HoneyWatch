@@ -1,7 +1,7 @@
 
 ---
 
-# 🎯 HoneyWatch – README Template
+# 🎯 HoneyWatch
 
 ```md
 # 🎯 HoneyWatch
